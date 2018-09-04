@@ -7,7 +7,9 @@ const auto CONNECTION_RETRIES = 20;
 const auto OPEN_REVIEWS_QUERY = "/a/changes/?q=status:open+is:reviewer";
 const auto CHANGES_ENDPOINT = "/a/changes/";
 const auto REVIEWERS = "/reviewers";
-const auto GERRIT_MAGIC_PREFIX = ")]}'\n";
+// The first five bytes received from gerrit are the "magic prefix" which
+// should be ignored
+const auto GERRIT_MAGIC_PREFIX_SIZE = 5; // )]}'\n
 
 ESP8266WiFiClass wifi;
 
@@ -56,22 +58,34 @@ void setup() {
     Serial.printf("GET failed, code: %s\n", http.errorToString(httpCode).c_str());
     indicateError();
   }
-  auto payload = http.getString();
+  delay(1000); // Wait for the response to be received
+
+  auto documentLength = http.getSize();
+  auto stream = http.getStream();
+
+  // Create dynamically a payload buffer
+  if (stream.available() <= GERRIT_MAGIC_PREFIX_SIZE) {
+    Serial.println("Error: No large enough response received from Gerrit");
+    indicateError();
+  }
+
+  // read all data from server
+  if (http.connected() && (documentLength > 0 || documentLength == -1)) {
+    char magicPrefix[5];
+    stream.readBytes(magicPrefix, GERRIT_MAGIC_PREFIX_SIZE); // Consume the magic prefix bytes
+    //stream.readBytes(payload, bufferSize); // Read the actual payload
+  }
+
+  DynamicJsonDocument doc(500);
+  deserializeJson(doc, stream);
   http.end();
-
-  // Gerrit inserts a "magic prefix" into the JSON response for security reasons
-  payload.replace(GERRIT_MAGIC_PREFIX, "");
-
-  DynamicJsonDocument doc;
-  deserializeJson(doc, payload);
   auto reviews = doc.as<JsonArray>();
 
   for (auto& review : reviews) {
-    
+
     String reviewNumber = review["_number"];
     Serial.println(reviewNumber);
     // Get all reviewers and their ratings
-    //http://dell-laptop:8080/a/changes/101/reviewers
     Serial.println(String(GERRIT_URL + CHANGES_ENDPOINT + reviewNumber + REVIEWERS));
     http.begin(String(GERRIT_URL + CHANGES_ENDPOINT + reviewNumber + REVIEWERS));
     httpCode = http.GET();
@@ -80,29 +94,39 @@ void setup() {
       Serial.printf("GET failed, code: %s\n", http.errorToString(httpCode).c_str());
       indicateError();
     }
-    
+    delay(1000); // Wait for the response to be received
 
-    payload = http.getString();
+    auto documentLength = http.getSize();
+    auto stream = http.getStream();
+
+    // Create dynamically a payload buffer
+    if (stream.available() <= GERRIT_MAGIC_PREFIX_SIZE) {
+      Serial.println("Error: No large enough response received from Gerrit");
+      indicateError();
+    }
+
+    // read all data from server
+    if (http.connected() && (documentLength > 0 || documentLength == -1)) {
+      char magicPrefix[5];
+      stream.readBytes(magicPrefix, GERRIT_MAGIC_PREFIX_SIZE); // Consume the magic prefix bytes
+    }
+
+    deserializeJson(doc, stream);
+    auto approvals = doc.as<JsonArray>();
     http.end();
 
-    payload.replace(GERRIT_MAGIC_PREFIX, "");
-    
-    Serial.println(payload);
-    deserializeJson(doc, payload);
-
-    auto approvals = doc.as<JsonArray>();
     auto reviewsDone = 0;
     for (auto& approval : approvals) {
-        auto codeReview = approval["approvals"]["Code-Review"];
-        if (codeReview != "0") {
-            reviewsDone++;
-        }
+      auto codeReview = approval["approvals"]["Code-Review"];
+      if (codeReview != "0") {
+        reviewsDone++;
+      }
     }
     Serial.printf("Reviews done: %d\n", reviewsDone);
     if (reviewsDone > 3) {
-        // remove yourself from review
+      // remove yourself from review
     } else {
-        
+
     }
   }
 
