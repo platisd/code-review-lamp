@@ -1,19 +1,20 @@
 #include <vector>
-#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include "credentials.h"
 
+const auto NEOPIXEL_PIN = 15;
+const auto NEOPIXEL_RING_SIZE = 16;
 const auto CONNECTION_RETRIES = 20;
 const auto OPEN_REVIEWS_QUERY = "/a/changes/?q=status:open+is:reviewer";
 const auto CHANGES_ENDPOINT = "/a/changes/";
-const auto REVIEWERS = "/reviewers";
-// The first five bytes received from gerrit are the "magic prefix" which
-// should be ignored
-const auto GERRIT_MAGIC_PREFIX_SIZE = 5; // )]}'\n
-char magicPrefixBuffer[5]; // A buffer for consuming the magic prefix
-
-ESP8266WiFiClass wifi;
+const auto REVIEWERS = "/reviewers/";
+const auto DELETE = "/delete";
+const auto ALL_REVIEWS_ASSIGNED_URL = GERRIT_URL + OPEN_REVIEWS_QUERY;
+const auto GERRIT_REVIEW_NUMBER_ATTRIBUTE = "_number";
+const auto GERRIT_REVIEW_APPROVAL_ATTRIBUTE = "Code-Review";
+const auto WAIT_FOR_GERRIT_RESPONSE = 500;
+const auto ENOUGH_CONDUCTED_REVIEWS = 1;
 
 /**
    Block and indicate an error to the user
@@ -29,54 +30,83 @@ void indicateError() {
 }
 
 /**
-   Sends a GET request to the specified URI and returns the
-   response as a JSON Array
+   @param reviewUrl     The URL of the review
+   @param gerritUser    The Gerrit username to be removed from the review
 */
-JsonArray getJsonArrayFromGET(const String& url) {
+void removeFromReview(const String& reviewUrl, const String& gerritUser) {
+  HTTPClient http;
+  Serial.println(reviewUrl + gerritUser + DELETE);
+  http.begin(reviewUrl + gerritUser + DELETE);
+  http.setAuthorization(GERRIT_USERNAME, GERRIT_HTTP_PASSWORD);
+  auto httpCode = http.POST(""); // No payload needed
+  http.end();
+
+  if (httpCode < 0 || httpCode != HTTP_CODE_NO_CONTENT) {
+    Serial.printf("[%s] POST failed, code: %s\n", __FUNCTION__, http.errorToString(httpCode).c_str());
+    indicateError();
+  }
+}
+
+/**
+   @param url    The URL to execute a GET request
+   @param key    The key to look inside the incoming JSON stream
+   @return       A list with all the values of the specific key
+*/
+std::vector<String> getStreamAttribute(const String& url, const String& key) {
   HTTPClient http;
   http.begin(url);
-  http.setAuthorization("nikosp", "RRXWEQA9aguvXlsES2XA0ayMbiJ2JtpHety0r3LeJw");
+  http.setAuthorization(GERRIT_USERNAME, GERRIT_HTTP_PASSWORD);
   auto httpCode = http.GET();
 
   if (httpCode < 0 || httpCode != HTTP_CODE_OK) {
-    Serial.printf("GET failed, code: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("[%s] GET failed, code: %s\n", __FUNCTION__, http.errorToString(httpCode).c_str());
     indicateError();
   }
-  delay(1000); // Wait for the response to be received
+  delay(WAIT_FOR_GERRIT_RESPONSE);
 
   auto documentLength = http.getSize();
   auto stream = http.getStream();
 
-  // Create dynamically a payload buffer
-  if (stream.available() <= GERRIT_MAGIC_PREFIX_SIZE) {
-    Serial.println("Error: No large enough response received from Gerrit");
+  std::vector<String> keyValues;
+  if (http.connected() && (documentLength > 0 || documentLength == -1)) {
+    while (stream.available()) {
+      // Parse the value of the key when found
+      String line = stream.readStringUntil('\n');
+      line.trim();
+      line.replace("\"", "");
+      // Clear out unnecessary characters
+      if (line.startsWith(key)) {
+        line.replace(key, "");
+        line.replace(",", "");
+        line.replace(":", "");
+        line.trim();
+        // By now it should include just the information we are interested in
+        keyValues.push_back(line);
+      }
+    }
+  }
+
+  if (keyValues.empty()) {
+    Serial.printf("Error - Key not found: %s\n", key.c_str());
     indicateError();
   }
-
-  // read all data from server
-  if (http.connected() && (documentLength > 0 || documentLength == -1)) {
-    stream.readBytes(magicPrefixBuffer, GERRIT_MAGIC_PREFIX_SIZE); // Consume the magic prefix bytes
-  }
-
-  DynamicJsonDocument doc(stream.available());
-  deserializeJson(doc, stream);
   http.end();
 
-  return doc.as<JsonArray>();
+  return keyValues;
 }
 
 void connectToWifi() {
   // Set WiFi to station mode and disconnect from an AP
   // if it was previously connected.
-  wifi.mode(WIFI_STA);
-  wifi.disconnect();
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
   delay(100);
 
   // Try to connect to the internet.
-  wifi.begin(INTERNET_SSID, PASSWORD);
+  WiFi.begin(INTERNET_SSID, PASSWORD);
   auto attemptsLeft = CONNECTION_RETRIES;
   Serial.print("Connecting");
-  while ((wifi.status() != WL_CONNECTED) && (--attemptsLeft > 0)) {
+  while ((WiFi.status() != WL_CONNECTED) && (--attemptsLeft > 0)) {
     delay(500); // Wait a bit before retrying
     Serial.print(".");
   }
@@ -88,56 +118,33 @@ void connectToWifi() {
   Serial.println(" Connection success");
 }
 
-std::vector<String> getOpenReviews() {
-  std::vector<String> openReviews;
-  auto reviews = getJsonArrayFromGET(String(GERRIT_URL + OPEN_REVIEWS_QUERY));
-
-  for (auto& review : reviews) {
-    String reviewNumber = review["_number"];
-    openReviews.push_back(reviewNumber);
-  }
-
-  return openReviews;
-}
-
-int getFinishedReviews(const String& review) {
-  auto finishedReviews = 0;
-  auto reviews = getJsonArrayFromGET(String(GERRIT_URL + CHANGES_ENDPOINT + review + REVIEWERS));
-
-  for (auto& review : reviews) {
-    auto codeReview = review["approvals"]["Code-Review"];
-    if (codeReview != " 0") {
-      finishedReviews++;
-    }
-  }
-
-  return finishedReviews;
-}
-
 void setup() {
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT);
   connectToWifi();
 
-  auto reviews = getOpenReviews();
+  // Get all reviews assigned to our user
+  Serial.println("Getting all reviews assigned to us");
+  auto reviews = getStreamAttribute(ALL_REVIEWS_ASSIGNED_URL, GERRIT_REVIEW_NUMBER_ATTRIBUTE);
   for (auto& review : reviews) {
-    // Get all reviewers and their ratings
-    Serial.println(review);
-    auto finishedReviews = getFinishedReviews(review);
-    Serial.printf("Finished reviews %d:\n", finishedReviews);
-
-    if (finishedReviews > 0) {
-      for (int i = 0; i < 20; i++) {
-        digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-        delay(20);                       // wait for a second
-        digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-        delay(20);                       // wait for a second
+    // Get all approvals for the specific review
+    Serial.printf("Getting all approvals for review %s\n", review.c_str());
+    Serial.println(GERRIT_URL + CHANGES_ENDPOINT + review + REVIEWERS);
+    auto reviewUrl = GERRIT_URL + CHANGES_ENDPOINT + review + REVIEWERS;
+    auto approvals = getStreamAttribute(reviewUrl, GERRIT_REVIEW_APPROVAL_ATTRIBUTE);
+    auto finishedReviews = 0;
+    for (auto& approval : approvals) {
+      Serial.println(approval);
+      if (approval != "0") {
+        finishedReviews++;
       }
+    }
+
+    if (finishedReviews > ENOUGH_CONDUCTED_REVIEWS) {
+      Serial.printf("We got enough reviews in %s, removing ourselves\n", review.c_str());
+      removeFromReview(reviewUrl, GERRIT_USERNAME);
     } else {
-        digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-        delay(1000);                       // wait for a second
-        digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-        delay(1000);                       // wait for a second
+      Serial.printf("Not enough reviews in %s\n", review.c_str());
     }
   }
 
