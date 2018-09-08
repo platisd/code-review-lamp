@@ -30,13 +30,13 @@ void indicateError() {
 }
 
 /**
-   @param reviewUrl     The URL of the review
-   @param gerritUser    The Gerrit username to be removed from the review
+   @param getReviewersUrl   The URL of the reviewers endpoint
+   @param gerritUser        The Gerrit username to be removed from the review
 */
-void removeFromReview(const String& reviewUrl, const String& gerritUser) {
+void removeFromReview(const String& getReviewersUrl, const String& gerritUser) {
   HTTPClient http;
-  Serial.println(reviewUrl + gerritUser + DELETE);
-  http.begin(reviewUrl + gerritUser + DELETE);
+  Serial.println(getReviewersUrl + gerritUser + DELETE);
+  http.begin(getReviewersUrl + gerritUser + DELETE);
   http.setAuthorization(GERRIT_USERNAME, GERRIT_HTTP_PASSWORD);
   auto httpCode = http.POST(""); // No payload needed
   http.end();
@@ -121,6 +121,7 @@ void connectToWifi() {
 void setup() {
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
   connectToWifi();
 
   // Get all reviews assigned to our user
@@ -129,9 +130,9 @@ void setup() {
   for (auto& review : reviews) {
     // Get all approvals for the specific review
     Serial.printf("Getting all approvals for review %s\n", review.c_str());
-    Serial.println(GERRIT_URL + CHANGES_ENDPOINT + review + REVIEWERS);
-    auto reviewUrl = GERRIT_URL + CHANGES_ENDPOINT + review + REVIEWERS;
-    auto approvals = getStreamAttribute(reviewUrl, GERRIT_REVIEW_APPROVAL_ATTRIBUTE);
+    auto getChangeUrl = CHANGES_ENDPOINT + review;
+    auto getReviewersUrl = CHANGES_ENDPOINT + review + REVIEWERS;
+    auto approvals = getStreamAttribute(getReviewersUrl, GERRIT_REVIEW_APPROVAL_ATTRIBUTE);
     auto finishedReviews = 0;
     for (auto& approval : approvals) {
       Serial.println(approval);
@@ -142,9 +143,10 @@ void setup() {
 
     if (finishedReviews > ENOUGH_CONDUCTED_REVIEWS) {
       Serial.printf("We got enough reviews in %s, removing ourselves\n", review.c_str());
-      removeFromReview(reviewUrl, GERRIT_USERNAME);
+      removeFromReview(getReviewersUrl, GERRIT_USERNAME);
     } else {
-      Serial.printf("Not enough reviews in %s\n", review.c_str());
+      auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE).front();
+      Serial.printf("Owner ID: %s\n", ownerId.c_str());
     }
   }
 
