@@ -1,16 +1,10 @@
 #include <vector>
 #include <map>
+#include <stdint.h>
+#include <Adafruit_NeoPixel.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include "credentials.h"
-
-struct RGBColor {
-  public:
-    RGBColor(int r = 0, int g = 0, int b = 0) : red{r}, green{g}, blue{b} {}
-    int red;
-    int green;
-    int blue;
-};
 
 const auto NEOPIXEL_PIN = 15;
 const auto NEOPIXEL_RING_SIZE = 16;
@@ -26,14 +20,23 @@ const auto GERRIT_REVIEW_OWNERID_ATTRIBUTE = "_account_id";
 const auto WAIT_FOR_GERRIT_RESPONSE = 500;
 const auto ENOUGH_CONDUCTED_REVIEWS = 1;
 
-const RGBColor KINDA_ORANGE (216, 81, 23);
-const RGBColor MELLOW_YELLOW (196, 178, 41);
-const RGBColor ALIEN_GREEN (174, 249, 52);
-const RGBColor COOL_CYAN (43, 239, 177);
-const RGBColor GREEK_BLUE (42, 62, 239);
-const RGBColor GOTH_PURPLE (244, 68, 235);
-// Maps gerrit account ids with lamp colors
-std::map<String, RGBColor> LAMP_COLORS {{"1000000", KINDA_ORANGE}, {"1000002", MELLOW_YELLOW}, {"1000003", ALIEN_GREEN}, {"1000004", COOL_CYAN}, {"1000005", GREEK_BLUE}, {"1000006", GOTH_PURPLE} };
+const auto KINDA_ORANGE = Adafruit_NeoPixel::Color(216, 81, 23);
+const auto MELLOW_YELLOW = Adafruit_NeoPixel::Color (196, 178, 41);
+const auto ALIEN_GREEN = Adafruit_NeoPixel::Color (174, 249, 52);
+const auto COOL_CYAN = Adafruit_NeoPixel::Color (43, 239, 177);
+const auto GREEK_BLUE = Adafruit_NeoPixel::Color (42, 62, 239);
+const auto GOTH_PURPLE = Adafruit_NeoPixel::Color (244, 68, 235);
+// Maps gerrit account ids with 32-bit neopixel lamp colors
+const std::map<const char*, uint32_t> LAMP_COLORS {
+  {"1000000", KINDA_ORANGE},
+  {"1000002", MELLOW_YELLOW},
+  {"1000003", ALIEN_GREEN},
+  {"1000004", COOL_CYAN},
+  {"1000005", GREEK_BLUE},
+  {"1000006", GOTH_PURPLE}
+};
+
+Adafruit_NeoPixel ring = Adafruit_NeoPixel(NEOPIXEL_RING_SIZE, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 /**
    Block and indicate an error to the user
