@@ -103,15 +103,15 @@ const HSVColor ALIEN_GREEN (100, 100, 100);
 const HSVColor COOL_CYAN (184, 100, 100);
 const HSVColor GREEK_BLUE (227, 100, 100);
 const HSVColor GOTH_PURPLE (291, 100, 100);
-const HSVColor ALMOST_PINK (346, 100, 100);
+const HSVColor ALMOST_PINK (346, 60, 100);
 // Maps gerrit account ids with 32-bit neopixel lamp colors
 std::map<String, HSVColor> LAMP_COLORS {
-  {"1000000", KINDA_ORANGE},
-  {"1000002", MELLOW_YELLOW},
-  {"1000003", ALIEN_GREEN},
-  {"1000004", COOL_CYAN},
-  {"1000005", GREEK_BLUE},
-  {"1000006", GOTH_PURPLE}
+  {"1000037", KINDA_ORANGE}, // nm
+  {"1000079", MELLOW_YELLOW}, // dj
+  {"1000078", ALIEN_GREEN}, // jk
+  {"1000039", COOL_CYAN}, // nj
+  {"1000036", GREEK_BLUE}, // dp
+  {"1000354", GOTH_PURPLE} // fb
 };
 
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(NEOPIXEL_RING_SIZE, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
