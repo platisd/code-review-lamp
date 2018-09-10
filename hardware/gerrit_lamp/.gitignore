@@ -1,0 +1,7 @@
+# Ignore everything
+*
+# Except the following:
+!.gitignore
+!gerrit_lamp.brd
+!gerrit_lamp.sch
+!README.md
