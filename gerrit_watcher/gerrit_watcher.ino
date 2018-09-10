@@ -4,7 +4,19 @@
 #include <Adafruit_NeoPixel.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+
+// Keep your project specific credentials in a non-version controlled
+// `credentials.h` file and set the `NO_CREDENTIALS_HEADER` to false.
+#define NO_CREDENTIALS_HEADER false
+#if NO_CREDENTIALS_HEADER == true
+const auto INTERNET_SSID = "your_ssid";
+const auto PASSWORD = "your_password";
+const String GERRIT_URL = "http://your_gerrit_url:8080";
+const auto GERRIT_USERNAME = "your_gerrit_username";
+const auto GERRIT_HTTP_PASSWORD = "your_gerrit_http_password";
+#else
 #include "credentials.h"
+#endif
 
 struct RGBColor {
   RGBColor(int r = 0, int g = 0, int b = 0) : red{r}, green{g}, blue{b} {}
@@ -69,14 +81,6 @@ struct HSVColor {
     }
   }
 };
-
-#ifndef CREDENTIALS_IN_DIFFERENT_FILE
-const auto INTERNET_SSID = "your_ssid";
-const auto PASSWORD = "your_password";
-const String GERRIT_URL = "http://your_gerrit_url:8080";
-const auto GERRIT_USERNAME = "your_gerrit_username";
-const auto GERRIT_HTTP_PASSWORD = "your_gerrit_http_password";
-#endif
 
 const auto NEOPIXEL_PIN = 15;
 const auto NEOPIXEL_RING_SIZE = 16;
