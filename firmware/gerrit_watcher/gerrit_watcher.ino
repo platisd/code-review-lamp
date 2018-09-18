@@ -85,6 +85,7 @@ struct HSVColor {
 const auto NEOPIXEL_PIN = 15;
 const auto NEOPIXEL_RING_SIZE = 16;
 const auto DIM_WINDOW = 10000UL;
+const auto CHECK_FOR_REVIEWS_INTERVAL = 30000UL;
 const auto CONNECTION_RETRIES = 20;
 const auto OPEN_REVIEWS_QUERY = "/a/changes/?q=status:open+is:reviewer";
 const String CHANGES_ENDPOINT = GERRIT_URL + "/a/changes/";
@@ -242,7 +243,6 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
     // Measure how many reviews have been conducted (i.e. approval is NOT `0`)
     auto conductedReviews = 0;
     for (auto& approval : approvals) {
-      Serial.println(approval);
       if (approval != "0") {
         conductedReviews++;
       }
@@ -253,7 +253,6 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
       removeFromReview(getReviewersUrl, GERRIT_USERNAME);
     } else {
       auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE).front();
-      Serial.printf("Owner ID: %s\n", ownerId.c_str());
       if (LAMP_COLORS.find(ownerId) == LAMP_COLORS.end() ) {
         // Unknown review owner
         colorsToShow.push_back(COOL_CYAN);
@@ -341,13 +340,15 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
   ring.begin();
   ring.show(); // Initialize all pixels to 'off'
-
-  connectToWifi();
-  auto hsvColors = getColorsForUnfinishedReviews();
-  dimWithColors(ring, hsvColors);
-  Serial.println("Done");
 }
 
 void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    connectToWifi();
+  }
 
+  auto hsvColors = getColorsForUnfinishedReviews();
+  dimWithColors(ring, hsvColors);
+
+  delay(CHECK_FOR_REVIEWS_INTERVAL);
 }
