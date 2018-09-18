@@ -103,15 +103,15 @@ const HSVColor ALIEN_GREEN (100, 100, 100);
 const HSVColor COOL_CYAN (184, 100, 100);
 const HSVColor GREEK_BLUE (227, 100, 100);
 const HSVColor GOTH_PURPLE (291, 100, 100);
-const HSVColor ALMOST_PINK (346, 60, 100);
+const HSVColor BLOOD_RED (359, 89, 100);
 // Maps gerrit account ids with 32-bit neopixel lamp colors
 std::map<String, HSVColor> LAMP_COLORS {
-  {"1000037", KINDA_ORANGE}, // nm
-  {"1000079", MELLOW_YELLOW}, // dj
-  {"1000078", ALIEN_GREEN}, // jk
-  {"1000039", COOL_CYAN}, // nj
-  {"1000036", GREEK_BLUE}, // dp
-  {"1000354", GOTH_PURPLE} // fb
+  {"1000037", MELLOW_YELLOW}, // nm
+  {"1000079", ALIEN_GREEN}, // dj
+  {"1000078", GOTH_PURPLE}, // jk
+  {"1000039", KINDA_ORANGE}, // nj
+  {"1000036", BLOOD_RED}, // dp
+  {"1000354", GREEK_BLUE} // fb
 };
 
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(NEOPIXEL_RING_SIZE, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
@@ -256,7 +256,7 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
       Serial.printf("Owner ID: %s\n", ownerId.c_str());
       if (LAMP_COLORS.find(ownerId) == LAMP_COLORS.end() ) {
         // Unknown review owner
-        colorsToShow.push_back(ALMOST_PINK);
+        colorsToShow.push_back(COOL_CYAN);
       } else {
         colorsToShow.push_back(LAMP_COLORS[ownerId]);
       }
