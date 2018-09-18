@@ -95,7 +95,7 @@ const auto GERRIT_REVIEW_NUMBER_ATTRIBUTE = "_number";
 const auto GERRIT_REVIEW_APPROVAL_ATTRIBUTE = "Code-Review";
 const auto GERRIT_REVIEW_OWNERID_ATTRIBUTE = "_account_id";
 const auto WAIT_FOR_GERRIT_RESPONSE = 50;
-const auto ENOUGH_CONDUCTED_REVIEWS = 1;
+const auto ENOUGH_CONDUCTED_REVIEWS = 2;
 
 const HSVColor KINDA_ORANGE (27, 100, 100);
 const HSVColor MELLOW_YELLOW (58, 100, 100);
