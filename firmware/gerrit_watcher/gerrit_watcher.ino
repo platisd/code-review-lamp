@@ -248,7 +248,7 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
       }
     }
 
-    if (conductedReviews > ENOUGH_CONDUCTED_REVIEWS) {
+    if (conductedReviews >= ENOUGH_CONDUCTED_REVIEWS) {
       Serial.printf("We got enough reviews in %s, removing ourselves\n", review.c_str());
       removeFromReview(getReviewersUrl, GERRIT_USERNAME);
     } else {
