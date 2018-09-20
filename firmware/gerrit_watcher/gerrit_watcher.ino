@@ -259,20 +259,6 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
 }
 
 /**
-   Dim the provided neopixels down until they are completely off
-   @param neopixels The neopixels to dim down
-*/
-void dimNeopixelsOff(Adafruit_NeoPixel& neopixels) {
-  static const auto DIM_DOWN_INTERVAL = 20UL;
-  //TODO: Fix without brightness
-  for (auto pixel = 0; pixel < neopixels.numPixels(); pixel++) {
-    neopixels.setPixelColor(pixel, 0, 0, 0);
-    neopixels.show();
-    delay(DIM_DOWN_INTERVAL);
-  }
-}
-
-/**
    Set the specified RGB color to all the pixels
 
    @param   neopixels   The neopixel structure to set color
