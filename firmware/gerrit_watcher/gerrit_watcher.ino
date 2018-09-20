@@ -261,8 +261,8 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
 /**
    Set the specified RGB color to all the pixels
 
-   @param   neopixels   The neopixel structure to set color
-   @param   rgbColor    The RGB color to set the pixels
+   @param neopixels The neopixel structure to set color
+   @param rgbColor  The RGB color to set the pixels
 */
 void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   for (auto pixel = 0; pixel < neopixels.numPixels(); pixel++) {
@@ -272,8 +272,8 @@ void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
 
 /**
    Dim for all the supplied colors throughout the specified window
-   @param neopixels     The neopixel structure to dim
-   @param hsvColors     The HSV colors to be dimmed
+   @param neopixels The neopixel structure to dim
+   @param hsvColors The HSV colors to be dimmed
 */
 void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColors) {
   if (hsvColors.empty()) {
