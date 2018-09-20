@@ -85,7 +85,7 @@ struct HSVColor {
 const auto NEOPIXEL_PIN = 15;
 const auto NEOPIXEL_RING_SIZE = 16;
 const auto DIM_WINDOW = 10000UL;
-const auto CHECK_FOR_REVIEWS_INTERVAL = 30000UL;
+const auto CHECK_FOR_REVIEWS_INTERVAL = 20000UL;
 const auto CONNECTION_RETRIES = 20;
 const auto OPEN_REVIEWS_QUERY = "/a/changes/?q=status:open+is:reviewer";
 const String CHANGES_ENDPOINT = GERRIT_URL + "/a/changes/";
@@ -161,7 +161,7 @@ std::vector<String> getStreamAttribute(const String& url, const String& key) {
 
   if (httpCode < 0 || httpCode != HTTP_CODE_OK) {
     Serial.printf("[%s] GET failed, code: %s\n", __FUNCTION__, http.errorToString(httpCode).c_str());
-    indicateError();
+    return {};
   }
   delay(WAIT_FOR_GERRIT_RESPONSE);
 
@@ -188,8 +188,7 @@ std::vector<String> getStreamAttribute(const String& url, const String& key) {
   }
 
   if (keyValues.empty()) {
-    Serial.printf("Error - Key not found: %s\n", key.c_str());
-    indicateError();
+    Serial.printf("Warning - Key not found: %s\n", key.c_str());
   }
   http.end();
 
@@ -308,7 +307,6 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
   auto timeSlotForEachColor = DIM_WINDOW / hsvColors.size();
   for (const auto& hsvColor : hsvColors) {
     auto rgb = hsvColor.toRGB();
-    Serial.println("Dimming up");
     // The time slot has to be evenly divided among the intervals necessary
     // to dim it all the way up and down
     auto dimInterval = (timeSlotForEachColor / hsvColor.value) / 2;
@@ -321,7 +319,6 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
       delay(dimInterval);
     }
     delay(TIME_BETWEEN_DIMS);
-    Serial.println("Dimming down");
     // Dim down every pixel for the current color
     for (auto intensity = hsvColor.value; intensity >= 0; intensity--) {
       // Get the RGB value of the currently dimmed HSV color
@@ -336,19 +333,17 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
 
 void setup() {
   Serial.begin(9600);
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
   ring.begin();
   ring.show(); // Initialize all pixels to 'off'
+  connectToWifi();
 }
 
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     connectToWifi();
+  } else {
+    auto hsvColors = getColorsForUnfinishedReviews();
+    dimWithColors(ring, hsvColors);
   }
-
-  auto hsvColors = getColorsForUnfinishedReviews();
-  dimWithColors(ring, hsvColors);
-
   delay(CHECK_FOR_REVIEWS_INTERVAL);
 }
