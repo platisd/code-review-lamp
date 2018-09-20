@@ -1,5 +1,4 @@
 #include <vector>
-#include <map>
 #include <stdint.h>
 #include <Adafruit_NeoPixel.h>
 #include <ESP8266WiFi.h>
@@ -105,17 +104,31 @@ const HSVColor ALMOST_WHITE (293, 4, 70);
 const HSVColor GREEK_BLUE (227, 100, 100);
 const HSVColor GOTH_PURPLE (315, 100, 100);
 const HSVColor BLOOD_RED (0, 100, 100);
-// Maps gerrit account ids with 32-bit neopixel lamp colors
-std::map<String, HSVColor> LAMP_COLORS {
-  {"1000037", MELLOW_YELLOW}, // nm
-  {"1000079", ALIEN_GREEN}, // dj
-  {"1000078", GOTH_PURPLE}, // jk
-  {"1000039", KINDA_ORANGE}, // nj
-  {"1000036", BLOOD_RED}, // dp
-  {"1000354", GREEK_BLUE} // fb
-};
 
+/**
+   Maps gerrit account id to lamp colors
+   @param userId  Gerrit user ID
+*/
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(NEOPIXEL_RING_SIZE, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
+HSVColor toColor(const String& userId) {
+  switch (userId.toInt()) {
+    case 1000037: // nm
+      return MELLOW_YELLOW;
+    case 1000079: // dj
+      return ALIEN_GREEN;
+    case 1000078: // jk
+      return GOTH_PURPLE;
+    case 1000039: // nj
+      return KINDA_ORANGE;
+    case 1000036: // dp
+      return BLOOD_RED;
+    case 1000354: // fb
+      return GREEK_BLUE;
+    default:
+      return ALMOST_WHITE;
+  }
+}
 
 /**
    Display an error pattern on the neopixels
@@ -236,12 +249,7 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
 
     if (conductedReviews < ENOUGH_CONDUCTED_REVIEWS) {
       auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE).front();
-      if (LAMP_COLORS.find(ownerId) == LAMP_COLORS.end() ) {
-        // Unknown review owner
-        colorsToShow.push_back(ALMOST_WHITE);
-      } else {
-        colorsToShow.push_back(LAMP_COLORS[ownerId]);
-      }
+      colorsToShow.push_back(toColor(ownerId));
     } else {
       Serial.printf("We got enough reviews in %s, no need to dim\n", review.c_str());
     }
