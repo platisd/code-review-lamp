@@ -118,33 +118,19 @@ std::map<String, HSVColor> LAMP_COLORS {
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(NEOPIXEL_RING_SIZE, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 /**
-   Block and indicate an error to the user
+   Display an error pattern on the neopixels
+   @param neopixels The neopixels to display the error
 */
-void indicateError() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  while (true) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(200);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(200);
-  }
-}
-
-/**
-   @param getReviewersUrl   The URL of the reviewers endpoint
-   @param gerritUser        The Gerrit username to be removed from the review
-*/
-void removeFromReview(const String& getReviewersUrl, const String& gerritUser) {
-  HTTPClient http;
-  Serial.println(getReviewersUrl + gerritUser + DELETE);
-  http.begin(getReviewersUrl + gerritUser + DELETE);
-  http.setAuthorization(GERRIT_USERNAME, GERRIT_HTTP_PASSWORD);
-  auto httpCode = http.POST(""); // No payload needed
-  http.end();
-
-  if (httpCode < 0 || httpCode != HTTP_CODE_NO_CONTENT) {
-    Serial.printf("[%s] POST failed, code: %s\n", __FUNCTION__, http.errorToString(httpCode).c_str());
-    indicateError();
+void indicateError(Adafruit_NeoPixel& neopixels) {
+  static const auto ERROR_INTERVAL = 250UL;
+  // Blink red LEDs sequentially to indicate an error
+  for (auto pixel = 0; pixel < neopixels.numPixels(); pixel++) {
+    neopixels.setPixelColor(pixel, 200, 0, 0);
+    neopixels.show();
+    delay(ERROR_INTERVAL);
+    neopixels.setPixelColor(pixel, 0, 0, 0);
+    neopixels.show();
+    delay(ERROR_INTERVAL);
   }
 }
 
@@ -213,9 +199,10 @@ void connectToWifi() {
 
   if (attemptsLeft <= 0) {
     Serial.println(" Connection error!");
-    indicateError();
+    indicateError(ring);
+  } else {
+    Serial.println(" Connection success");
   }
-  Serial.println(" Connection success");
 }
 
 /**
@@ -247,17 +234,16 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
       }
     }
 
-    if (conductedReviews >= ENOUGH_CONDUCTED_REVIEWS) {
-      Serial.printf("We got enough reviews in %s, removing ourselves\n", review.c_str());
-      removeFromReview(getReviewersUrl, GERRIT_USERNAME);
-    } else {
+    if (conductedReviews < ENOUGH_CONDUCTED_REVIEWS) {
       auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE).front();
       if (LAMP_COLORS.find(ownerId) == LAMP_COLORS.end() ) {
         // Unknown review owner
-        colorsToShow.push_back(COOL_CYAN);
+        colorsToShow.push_back(ALMOST_WHITE);
       } else {
         colorsToShow.push_back(LAMP_COLORS[ownerId]);
       }
+    } else {
+      Serial.printf("We got enough reviews in %s, no need to dim\n", review.c_str());
     }
   }
 
