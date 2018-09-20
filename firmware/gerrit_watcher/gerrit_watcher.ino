@@ -98,13 +98,13 @@ const auto GERRIT_REVIEW_OWNERID_ATTRIBUTE = "_account_id";
 const auto WAIT_FOR_GERRIT_RESPONSE = 50;
 const auto ENOUGH_CONDUCTED_REVIEWS = 2;
 
-const HSVColor KINDA_ORANGE (27, 100, 100);
-const HSVColor MELLOW_YELLOW (58, 100, 100);
+const HSVColor KINDA_ORANGE (10, 100, 100);
+const HSVColor MELLOW_YELLOW (30, 100, 100);
 const HSVColor ALIEN_GREEN (100, 100, 100);
-const HSVColor COOL_CYAN (184, 100, 100);
+const HSVColor ALMOST_WHITE (293, 4, 70);
 const HSVColor GREEK_BLUE (227, 100, 100);
-const HSVColor GOTH_PURPLE (291, 100, 100);
-const HSVColor BLOOD_RED (359, 89, 100);
+const HSVColor GOTH_PURPLE (315, 100, 100);
+const HSVColor BLOOD_RED (0, 100, 100);
 // Maps gerrit account ids with 32-bit neopixel lamp colors
 std::map<String, HSVColor> LAMP_COLORS {
   {"1000037", MELLOW_YELLOW}, // nm
