@@ -159,7 +159,7 @@ std::vector<String> getStreamAttribute(const String& url, const String& key) {
   auto httpCode = http.GET();
 
   if (httpCode < 0 || httpCode != HTTP_CODE_OK) {
-    Serial.printf("[%s] GET failed, code: %s\n", __FUNCTION__, http.errorToString(httpCode).c_str());
+    Serial.printf("[%s] GET failed, code: %s\n\r", __FUNCTION__, http.errorToString(httpCode).c_str());
     return {};
   }
   delay(WAIT_FOR_GERRIT_RESPONSE);
@@ -187,7 +187,7 @@ std::vector<String> getStreamAttribute(const String& url, const String& key) {
   }
 
   if (keyValues.empty()) {
-    Serial.printf("Warning - Key not found: %s\n", key.c_str());
+    Serial.printf("Warning - Key not found: %s\n\r", key.c_str());
   }
   http.end();
 
@@ -235,7 +235,7 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
   auto reviews = getStreamAttribute(ALL_REVIEWS_ASSIGNED_URL, GERRIT_REVIEW_NUMBER_ATTRIBUTE);
   for (auto& review : reviews) {
     // Get all approvals for the specific review
-    Serial.printf("Getting all approvals for review %s\n", review.c_str());
+    Serial.printf("Getting all approvals for review %s\n\r", review.c_str());
     auto getChangeUrl = CHANGES_ENDPOINT + review;
     auto getReviewersUrl = CHANGES_ENDPOINT + review + REVIEWERS;
     auto approvals = getStreamAttribute(getReviewersUrl, GERRIT_REVIEW_APPROVAL_ATTRIBUTE);
@@ -251,7 +251,7 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
       auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE).front();
       colorsToShow.push_back(toColor(ownerId));
     } else {
-      Serial.printf("We got enough reviews in %s, no need to dim\n", review.c_str());
+      Serial.printf("We got enough reviews in %s, no need to dim\n\r", review.c_str());
     }
   }
 
