@@ -26,7 +26,7 @@ struct RGBColor {
 
 struct HSVColor {
   /**
-    @param h    Hue ranged          [0,360]
+    @param h    Hue ranged          [0,360)
     @param s    Saturation ranged   [0,100]
     @param v    Value ranged        [0,100]
   */
@@ -45,26 +45,22 @@ struct HSVColor {
   */
   RGBColor toRGB() const {
     // Scale the HSV values to the expected range
-    auto rangedHue = map(hue, 0, 360, 0, 255);
+    auto rangedHue = map(hue, 0, 359, 0, 255);
     auto rangedSat = map(saturation, 0, 100, 0, 255);
     auto rangedVal = map(value, 0, 100, 0, 255);
 
-    unsigned char region, remainder, p, q, t;
-
-    if (rangedSat == 0)
-    {
+    if (rangedSat == 0) {
       return {rangedVal, rangedVal, rangedVal};
     }
 
-    region = rangedHue / 43;
-    remainder = (rangedHue - (region * 43)) * 6;
+    auto region = rangedHue / 43;
+    auto remainder = (rangedHue - (region * 43)) * 6;
 
-    p = (rangedVal * (255 - rangedSat)) >> 8;
-    q = (rangedVal * (255 - ((rangedSat * remainder) >> 8))) >> 8;
-    t = (rangedVal * (255 - ((rangedSat * (255 - remainder)) >> 8))) >> 8;
+    auto p = (rangedVal * (255 - rangedSat)) >> 8;
+    auto q = (rangedVal * (255 - ((rangedSat * remainder) >> 8))) >> 8;
+    auto t = (rangedVal * (255 - ((rangedSat * (255 - remainder)) >> 8))) >> 8;
 
-    switch (region)
-    {
+    switch (region) {
       case 0:
         return {rangedVal, t, p};
       case 1:
@@ -85,6 +81,11 @@ const auto NEOPIXEL_PIN = 15;
 const auto NEOPIXEL_RING_SIZE = 16;
 const auto DIM_WINDOW = 10000UL;
 const auto CHECK_FOR_REVIEWS_INTERVAL = 20000UL;
+const auto ERROR_BLINK_INTERVAL = 250UL;
+const auto TIME_BETWEEN_DIMS = 200UL;
+const auto WAIT_FOR_GERRIT_RESPONSE = 50UL;
+const auto RECONNECT_TIMEOUT = 100UL;
+const auto RETRY_CONNECTION_INTERVAL = 500UL;
 const auto CONNECTION_RETRIES = 20;
 const auto OPEN_REVIEWS_QUERY = "/a/changes/?q=status:open+is:reviewer";
 const String CHANGES_ENDPOINT = GERRIT_URL + "/a/changes/";
@@ -94,7 +95,6 @@ const auto ALL_REVIEWS_ASSIGNED_URL = GERRIT_URL + OPEN_REVIEWS_QUERY;
 const auto GERRIT_REVIEW_NUMBER_ATTRIBUTE = "_number";
 const auto GERRIT_REVIEW_APPROVAL_ATTRIBUTE = "Code-Review";
 const auto GERRIT_REVIEW_OWNERID_ATTRIBUTE = "_account_id";
-const auto WAIT_FOR_GERRIT_RESPONSE = 50;
 const auto ENOUGH_CONDUCTED_REVIEWS = 2;
 
 const HSVColor KINDA_ORANGE (10, 100, 100);
@@ -105,12 +105,13 @@ const HSVColor GREEK_BLUE (227, 100, 100);
 const HSVColor GOTH_PURPLE (315, 100, 100);
 const HSVColor BLOOD_RED (0, 100, 100);
 
-/**
-   Maps gerrit account id to lamp colors
-   @param userId  Gerrit user ID
-*/
-Adafruit_NeoPixel ring = Adafruit_NeoPixel(NEOPIXEL_RING_SIZE, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel ring(NEOPIXEL_RING_SIZE, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
+/**
+   Maps Gerrit user IDs to lamp colors, adapt accordingly.
+   @param userId  Gerrit user ID
+   @return The HSV color to match the specific user
+*/
 HSVColor toColor(const String& userId) {
   switch (userId.toInt()) {
     case 1000037: // nm
@@ -125,7 +126,7 @@ HSVColor toColor(const String& userId) {
       return BLOOD_RED;
     case 1000354: // fb
       return GREEK_BLUE;
-    default:
+    default: // Developer from another team
       return ALMOST_WHITE;
   }
 }
@@ -135,15 +136,14 @@ HSVColor toColor(const String& userId) {
    @param neopixels The neopixels to display the error
 */
 void indicateError(Adafruit_NeoPixel& neopixels) {
-  static const auto ERROR_INTERVAL = 250UL;
   // Blink red LEDs sequentially to indicate an error
   for (auto pixel = 0; pixel < neopixels.numPixels(); pixel++) {
     neopixels.setPixelColor(pixel, 200, 0, 0);
     neopixels.show();
-    delay(ERROR_INTERVAL);
+    delay(ERROR_BLINK_INTERVAL);
     neopixels.setPixelColor(pixel, 0, 0, 0);
     neopixels.show();
-    delay(ERROR_INTERVAL);
+    delay(ERROR_BLINK_INTERVAL);
   }
 }
 
@@ -194,19 +194,21 @@ std::vector<String> getStreamAttribute(const String& url, const String& key) {
   return keyValues;
 }
 
+/**
+   (Re)connects the module to WiFi
+*/
 void connectToWifi() {
-  // Set WiFi to station mode and disconnect from an AP
-  // if it was previously connected.
+  // Set WiFi to station mode & disconnect from an AP if previously connected
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  delay(100);
+  delay(RECONNECT_TIMEOUT);
 
-  // Try to connect to the internet.
+  // Try to connect to the internet
   WiFi.begin(INTERNET_SSID, PASSWORD);
   auto attemptsLeft = CONNECTION_RETRIES;
   Serial.print("Connecting");
   while ((WiFi.status() != WL_CONNECTED) && (--attemptsLeft > 0)) {
-    delay(500); // Wait a bit before retrying
+    delay(RETRY_CONNECTION_INTERVAL); // Wait a bit before retrying
     Serial.print(".");
   }
 
@@ -283,7 +285,6 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
   // Dim every color within the designated time window
   // The effect we are after is the more unfinished reviews
   // the faster the neopixels will dim
-  static const auto TIME_BETWEEN_DIMS = 200UL;
   auto timeSlotForEachColor = DIM_WINDOW / hsvColors.size();
   for (const auto& hsvColor : hsvColors) {
     auto rgb = hsvColor.toRGB();
