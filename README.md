@@ -1,6 +1,6 @@
 # Code Review Lamp
 A colorful lamp to notify the developer team for pending code reviews.
-![Code Review Lamp](https://i.imgur.com/qfeNIZF.jpg)
+![Code Review Lamp](https://i.imgur.com/V9rwpnD.jpg)
 
 ## What?
 Code Review Lamp is a Neopixel-based, WiFi-enabled gadget that reminds developers to peer-review their colleagues' code. For each submission that has not been reviewed enough, it dims up and down at a color that is specific to the developer who is trying to introduce a new functionality to a project. The lamp stops shining once the code has either received enough reviews by the team, been merged or designated as *Work In Progress*. Currently, it is configured to work with [Gerrit](https://www.gerritcodereview.com/) (v.2.15) but it could be programmed to fetch data from different tools such as Jenkins, GitHub, GitLab etc.
