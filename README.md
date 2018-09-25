@@ -29,6 +29,24 @@ The [firmware](https://github.com/platisd/code-review-lamp/blob/master/firmware/
 ### Hardware
 The gadget is rather simple to source and assemble. The only "custom" part is the [PCB](https://github.com/platisd/code-review-lamp/tree/master/hardware/gerrit_lamp) which merely connects the ESP8266 module with the Neopixel ring.
 
+### Get started
+After you have assembled the hardware, flash the firmware by following the steps below:
+* If on Windows or Mac, download the [Serial to USB chip drivers](https://wiki.wemos.cc/downloads)
+* Download and install the latest [Arduino IDE](https://www.arduino.cc/en/Main/Software) for your distribution
+* Install the `Adafruit Neopixel` library
+  * In Arduino IDE, click on `Sketch` :arrow_right: `Include Library` :arrow_right: `Manage Libraries`
+  * Look for `Adafruit NeoPixel` and install the `Adafruit NeoPixel by adafruit`
+* Install the ESP8266 SDK
+  * In Arduino IDE, click on `Tools` :arrow_right: `Board` :arrow_right: `Boards Manager`
+  * Look for `esp8266` and install the `esp8266 by ESP8266 Community`
+* Select the Wemos D1 Mini board
+  * In Arduino IDE, click on `Tools` :arrow_right: `Board` :arrow_right: `LOLIN(WEMOS) D1 R2 & mini`
+* Select the serial port your Code Review Lamp is connected to
+  * In Arduino IDE, click on `Tools` :arrow_right: `Port`
+* Copy & paste the [code](https://github.com/platisd/code-review-lamp/blob/master/firmware/gerrit_watcher/gerrit_watcher.ino) to your IDE
+* Make the necessary adjustments for your own SSID, Gerrit user etc
+* Upload the firmware by clicking `Upload` (the right arrow button on the upper left corner of your IDE)
+
 ## Components
 * [Code Review Lamp PCB](https://www.pcbway.com/project/shareproject/W17435BSW42_code_review_lamp.html)
 * [3D printed case](https://www.tinkercad.com/things/evNud1d8GYI)
