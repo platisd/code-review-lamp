@@ -57,3 +57,7 @@ After you have assembled the hardware, flash the firmware by following the steps
 * M3x40mm screws (4)
 * M3 nuts (4)
 * Micro USB cable
+
+## Media
+* Article on [platis.solutions](https://platis.solutions/blog/2018/09/26/code-review-lamp/)
+* [Demo video](https://www.youtube.com/watch?v=TPO2nQkfprY)
