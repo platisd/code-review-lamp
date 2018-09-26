@@ -47,6 +47,13 @@ After you have assembled the hardware, flash the firmware by following the steps
 * Make the necessary adjustments for your own SSID, Gerrit user etc
 * Upload the firmware by clicking `Upload` (the right arrow button on the upper left corner of your IDE)
 
+### How to use
+* Commit your change to Gerrit
+* Add the group which includes the team as reviewers
+  * A special "notification" user that will trigger the lamp should be part of the group
+* ???
+* Get your code reviewed faster!
+
 ## Components
 * [Code Review Lamp PCB](https://www.pcbway.com/project/shareproject/W17435BSW42_code_review_lamp.html)
 * [3D printed case](https://www.tinkercad.com/things/evNud1d8GYI)
