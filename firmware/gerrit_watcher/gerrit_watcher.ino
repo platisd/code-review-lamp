@@ -250,9 +250,9 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
     }
 
     if (conductedReviews < ENOUGH_CONDUCTED_REVIEWS) {
-      auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE).front();
-      if (ownerId.length() != 0) {
-        colorsToShow.push_back(toColor(ownerId));
+      auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE);
+      if (!ownerId.empty()) {
+        colorsToShow.push_back(toColor(ownerId.front()));
       }
     } else {
       Serial.printf("We got enough reviews in %s, no need to dim\n\r", review.c_str());
