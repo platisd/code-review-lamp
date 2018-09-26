@@ -8,7 +8,7 @@ Code Review Lamp is a Neopixel-based, WiFi-enabled gadget that reminds developer
 The gadget is comprised of an [ESP8266 microcontroller module](https://wiki.wemos.cc/products:d1:d1_mini) that connects wirelessly to the internet, as well as a [Neopixel ring](https://www.adafruit.com/product/1463) which displays various colors.
 
 ## Why?
-At work, we are a fast-paced team that likes to commit (relatively) small and often. Every commit does not only have to pass the various tests that are being run by our Continuous Integration machinery, but also gets extensively code reviewed before allowed to be merged. Since we are *five* in total and our internal code of conduct dictates *two* positive approvals for each new submission, the lack of responsiveness when it comes to reviewing, can impede the development process and speed.
+At work, we are a fast-paced team that likes to commit (relatively) small and often. Every commit does not only have to pass the various tests that are being run by our Continuous Integration machinery, but also gets extensively code reviewed before allowed to be merged. Since we are *six* in total and our internal code of conduct dictates *two* positive approvals for each new submission, the lack of responsiveness when it comes to reviewing, can impede the development process and speed.
 
 In an ideal world, developers would check their notification emails and would proceed on with reviewing their peer's code. However, as they are too absorbed by their ongoing work and perhaps slightly overwhelmed by the amount of emails they receive, these emails tend to be ignored. The common thought is that someone else in the team is going to review the code, but often no one does.
 
