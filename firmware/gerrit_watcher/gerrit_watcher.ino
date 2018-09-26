@@ -159,7 +159,8 @@ std::vector<String> getStreamAttribute(const String& url, const String& key) {
   auto httpCode = http.GET();
 
   if (httpCode < 0 || httpCode != HTTP_CODE_OK) {
-    Serial.printf("[%s] GET failed, code: %s\n\r", __FUNCTION__, http.errorToString(httpCode).c_str());
+    Serial.printf("[%s] GET failed with code '%s' for key '%s'\r\n", __FUNCTION__, http.errorToString(httpCode).c_str(), key.c_str());
+    http.end();
     return {};
   }
   delay(WAIT_FOR_GERRIT_RESPONSE);
@@ -232,7 +233,6 @@ void connectToWifi() {
 */
 std::vector<HSVColor> getColorsForUnfinishedReviews() {
   std::vector<HSVColor> colorsToShow;
-  // Get all reviews assigned to our user
   Serial.println("Getting all reviews assigned to us");
   auto reviews = getStreamAttribute(ALL_REVIEWS_ASSIGNED_URL, GERRIT_REVIEW_NUMBER_ATTRIBUTE);
   for (auto& review : reviews) {
@@ -251,7 +251,9 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
 
     if (conductedReviews < ENOUGH_CONDUCTED_REVIEWS) {
       auto ownerId = getStreamAttribute(getChangeUrl, GERRIT_REVIEW_OWNERID_ATTRIBUTE).front();
-      colorsToShow.push_back(toColor(ownerId));
+      if (ownerId.length() != 0) {
+        colorsToShow.push_back(toColor(ownerId));
+      }
     } else {
       Serial.printf("We got enough reviews in %s, no need to dim\n\r", review.c_str());
     }
