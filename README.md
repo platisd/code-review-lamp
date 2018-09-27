@@ -37,6 +37,8 @@ After you have assembled the hardware, flash the firmware by following the steps
   * In Arduino IDE, click on `Sketch` :arrow_right: `Include Library` :arrow_right: `Manage Libraries`
   * Look for `Adafruit NeoPixel` and install the `Adafruit NeoPixel by adafruit`
 * Install the ESP8266 SDK
+  * In Arduino IDE, click on `File` :arrow_right: `Preferences` :arrow_right: `Additional Board Manager URLs`
+  * Paste `http://arduino.esp8266.com/stable/package_esp8266com_index.json` and click `OK`
   * In Arduino IDE, click on `Tools` :arrow_right: `Board` :arrow_right: `Boards Manager`
   * Look for `esp8266` and install the `esp8266 by ESP8266 Community`
 * Select the Wemos D1 Mini board
