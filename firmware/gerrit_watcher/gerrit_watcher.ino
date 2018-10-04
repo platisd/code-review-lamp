@@ -4,6 +4,8 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
+enum class Effect {PULSE, RADAR};
+
 // Keep your project specific credentials in a non-version controlled
 // `credentials.h` file and set the `NO_CREDENTIALS_HEADER` to false.
 #define NO_CREDENTIALS_HEADER false
@@ -13,9 +15,12 @@ const auto PASSWORD = "your_password";
 const String GERRIT_URL = "http://your_gerrit_url:8080";
 const auto GERRIT_USERNAME = "your_gerrit_username";
 const auto GERRIT_HTTP_PASSWORD = "your_gerrit_http_password";
+const auto MY_EFFECT = Effect::PULSE;
 #else
 #include "credentials.h"
 #endif
+
+unsigned int rotate = 0;
 
 struct RGBColor {
   RGBColor(int r = 0, int g = 0, int b = 0) : red{r}, green{g}, blue{b} {}
@@ -268,7 +273,64 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
    @param neopixels The neopixel structure to set color
    @param rgbColor  The RGB color to set the pixels
 */
+
 void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
+  switch(MY_EFFECT) {
+    case Effect::RADAR:
+      setAllPixelColor_Radar(neopixels, rgbColor);
+      break;
+
+    case Effect::PULSE:
+      setAllPixelColor_Pulse(neopixels, rgbColor);
+      break;
+
+    default:
+      setAllPixelColor_Pulse(neopixels, rgbColor);
+      break;
+  }
+}
+
+/**
+   Perform some radar effect
+   @param neopixels The neopixel structure to set color
+   @param rgbColor  The RGB color to set the pixels
+*/
+void setAllPixelColor_Radar(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
+  int pixels = neopixels.numPixels();
+
+  // Does not matter if it rotates back to 0
+  rotate++;
+
+  // First third
+  for (auto pixel = 0 + rotate; pixel < pixels/3 + rotate; pixel++) {
+    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+  }
+
+  rgbColor.red   = rgbColor.red   / 2;
+  rgbColor.green = rgbColor.green / 2;
+  rgbColor.blue  = rgbColor.blue  / 2;
+
+  // Second third
+  for (auto pixel = pixels/3 + rotate; pixel < 2*pixels/3 + rotate; pixel++) {
+    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+  }
+
+  rgbColor.red   = rgbColor.red   / 2;
+  rgbColor.green = rgbColor.green / 2;
+  rgbColor.blue  = rgbColor.blue  / 2;
+
+  // Third third
+  for (auto pixel = 2*pixels/3 + rotate; pixel < pixels + rotate; pixel++) {
+    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+  }
+}
+
+/**
+  Perform some pulse effect
+   @param neopixels The neopixel structure to set color
+   @param rgbColor  The RGB color to set the pixels
+*/
+void setAllPixelColor_Pulse(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   for (auto pixel = 0; pixel < neopixels.numPixels(); pixel++) {
     neopixels.setPixelColor(pixel, rgbColor.red, rgbColor.green, rgbColor.blue);
   }
