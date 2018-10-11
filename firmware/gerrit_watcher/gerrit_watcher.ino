@@ -4,8 +4,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-enum class Effect {PULSE, RADAR};
-
 // Keep your project specific credentials in a non-version controlled
 // `credentials.h` file and set the `NO_CREDENTIALS_HEADER` to false.
 #define NO_CREDENTIALS_HEADER false
@@ -15,12 +13,13 @@ const auto PASSWORD = "your_password";
 const String GERRIT_URL = "http://your_gerrit_url:8080";
 const auto GERRIT_USERNAME = "your_gerrit_username";
 const auto GERRIT_HTTP_PASSWORD = "your_gerrit_http_password";
-const auto MY_EFFECT = Effect::PULSE;
 #else
 #include "credentials.h"
 #endif
 
-unsigned int rotate = 0;
+enum class Effect {PULSE, RADAR};
+unsigned int startingPixel = 0;
+const auto MY_EFFECT = Effect::PULSE;
 
 struct RGBColor {
   RGBColor(int r = 0, int g = 0, int b = 0) : red{r}, green{g}, blue{b} {}
@@ -87,7 +86,6 @@ const auto NEOPIXEL_RING_SIZE = 16;
 const auto DIM_WINDOW = 10000UL;
 const auto CHECK_FOR_REVIEWS_INTERVAL = 20000UL;
 const auto ERROR_BLINK_INTERVAL = 250UL;
-const auto TIME_BETWEEN_DIMS = 200UL;
 const auto WAIT_FOR_GERRIT_RESPONSE = 50UL;
 const auto RECONNECT_TIMEOUT = 100UL;
 const auto RETRY_CONNECTION_INTERVAL = 500UL;
@@ -277,15 +275,13 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
 void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   switch(MY_EFFECT) {
     case Effect::RADAR:
-      setAllPixelColor_Radar(neopixels, rgbColor);
+      setRadarEffect(neopixels, rgbColor);
       break;
-
     case Effect::PULSE:
-      setAllPixelColor_Pulse(neopixels, rgbColor);
+      setRadarEffect(neopixels, rgbColor);
       break;
-
     default:
-      setAllPixelColor_Pulse(neopixels, rgbColor);
+      setRadarEffect(neopixels, rgbColor);
       break;
   }
 }
@@ -295,34 +291,26 @@ void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
    @param neopixels The neopixel structure to set color
    @param rgbColor  The RGB color to set the pixels
 */
-void setAllPixelColor_Radar(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
-  int pixels = neopixels.numPixels();
+void setRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
+  const auto pixels = neopixels.numPixels();
+  static const auto SLICES = 3;
 
   // Does not matter if it rotates back to 0
-  rotate++;
+  startingPixel++;
 
-  // First third
-  for (auto pixel = 0 + rotate; pixel < pixels/3 + rotate; pixel++) {
-    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+  // Slice the lamp in parts where the first and brightest one is our radar effect
+  // while the rest have a progressively dimmer color.
+  for (auto slice = 0; slice < SLICES; slice++) {
+    for (auto pixel = slice * pixels / SLICES + startingPixel; pixel < (slice + 1) * pixels / SLICES + startingPixel; pixel++) {
+      neopixels.setPixelColor(pixel % pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+    }
+
+    rgbColor.red   /= 2;
+    rgbColor.green /= 2;
+    rgbColor.blue  /= 2;
   }
 
-  rgbColor.red   = rgbColor.red   / 2;
-  rgbColor.green = rgbColor.green / 2;
-  rgbColor.blue  = rgbColor.blue  / 2;
-
-  // Second third
-  for (auto pixel = pixels/3 + rotate; pixel < 2*pixels/3 + rotate; pixel++) {
-    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
-  }
-
-  rgbColor.red   = rgbColor.red   / 2;
-  rgbColor.green = rgbColor.green / 2;
-  rgbColor.blue  = rgbColor.blue  / 2;
-
-  // Third third
-  for (auto pixel = 2*pixels/3 + rotate; pixel < pixels + rotate; pixel++) {
-    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
-  }
+  startingPixel++;
 }
 
 /**
@@ -330,7 +318,7 @@ void setAllPixelColor_Radar(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
    @param neopixels The neopixel structure to set color
    @param rgbColor  The RGB color to set the pixels
 */
-void setAllPixelColor_Pulse(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
+void setPulseEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   for (auto pixel = 0; pixel < neopixels.numPixels(); pixel++) {
     neopixels.setPixelColor(pixel, rgbColor.red, rgbColor.green, rgbColor.blue);
   }
@@ -363,7 +351,7 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
       neopixels.show();
       delay(dimInterval);
     }
-    delay(TIME_BETWEEN_DIMS);
+
     // Dim down every pixel for the current color
     for (auto intensity = hsvColor.value; intensity >= 0; intensity--) {
       // Get the RGB value of the currently dimmed HSV color
@@ -372,7 +360,6 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
       neopixels.show();
       delay(dimInterval);
     }
-    delay(TIME_BETWEEN_DIMS);
   }
 }
 
