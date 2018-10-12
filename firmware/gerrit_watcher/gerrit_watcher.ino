@@ -18,7 +18,6 @@ const auto GERRIT_HTTP_PASSWORD = "your_gerrit_http_password";
 #endif
 
 enum class Effect {PULSE, RADAR, COOL_RADAR};
-unsigned int startingPixel = 0;
 const auto MY_EFFECT = Effect::RADAR;
 
 struct RGBColor {
@@ -298,6 +297,8 @@ void setRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   const auto pixels = neopixels.numPixels();
   static const auto SLICES = 3;
 
+  static unsigned int startingPixel = 0;
+
   // Does not matter if it rotates back to 0
   startingPixel++;
 
@@ -324,8 +325,11 @@ void setRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
 void setCoolRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   const auto pixels = neopixels.numPixels();
 
+  static unsigned int startingPixel = 0;
+  
+  // Does not matter if it rotates back to 0
   startingPixel++;
-
+  
   for (auto pixel = 0 + startingPixel; pixel < 3*pixels/5 + startingPixel; pixel++) {
     neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
   }
@@ -343,7 +347,7 @@ void setCoolRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   rgb2.red   = rgbColor.blue;
   rgb2.green = rgbColor.red;
   rgb2.blue  = rgbColor.green;
-
+  
   for (auto pixel = 4*pixels/5 + startingPixel; pixel < pixels + startingPixel; pixel++) {
     neopixels.setPixelColor(pixel%pixels, rgb2.red, rgb2.green, rgb2.blue);
   }
