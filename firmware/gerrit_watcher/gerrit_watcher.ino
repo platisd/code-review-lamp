@@ -313,8 +313,6 @@ void setRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
     rgbColor.green /= 2;
     rgbColor.blue  /= 2;
   }
-
-  startingPixel++;
 }
 
 /**
@@ -352,6 +350,7 @@ void setCoolRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
     neopixels.setPixelColor(pixel%pixels, rgb2.red, rgb2.green, rgb2.blue);
   }
 }
+
 /**
   Perform some pulse effect
    @param neopixels The neopixel structure to set color
