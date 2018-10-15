@@ -17,6 +17,9 @@ const auto GERRIT_HTTP_PASSWORD = "your_gerrit_http_password";
 #include "credentials.h"
 #endif
 
+enum class Effect {PULSE, RADAR, COOL_RADAR};
+const auto MY_EFFECT = Effect::RADAR;
+
 struct RGBColor {
   RGBColor(int r = 0, int g = 0, int b = 0) : red{r}, green{g}, blue{b} {}
   int red;
@@ -82,7 +85,6 @@ const auto NEOPIXEL_RING_SIZE = 16;
 const auto DIM_WINDOW = 10000UL;
 const auto CHECK_FOR_REVIEWS_INTERVAL = 20000UL;
 const auto ERROR_BLINK_INTERVAL = 250UL;
-const auto TIME_BETWEEN_DIMS = 200UL;
 const auto WAIT_FOR_GERRIT_RESPONSE = 50UL;
 const auto RECONNECT_TIMEOUT = 100UL;
 const auto RETRY_CONNECTION_INTERVAL = 500UL;
@@ -268,7 +270,93 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
    @param neopixels The neopixel structure to set color
    @param rgbColor  The RGB color to set the pixels
 */
+
 void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
+  switch(MY_EFFECT) {
+    case Effect::RADAR:
+      setRadarEffect(neopixels, rgbColor);
+      break;
+    case Effect::PULSE:
+      setPulseEffect(neopixels, rgbColor);
+      break;
+    case Effect::COOL_RADAR:
+      setCoolRadarEffect(neopixels, rgbColor);
+      break;
+    default:
+      setRadarEffect(neopixels, rgbColor);
+      break;
+  }
+}
+
+/**
+   Perform some radar effect
+   @param neopixels The neopixel structure to set color
+   @param rgbColor  The RGB color to set the pixels
+*/
+void setRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
+  const auto pixels = neopixels.numPixels();
+  static const auto SLICES = 3;
+
+  static unsigned int startingPixel = 0;
+
+  // Does not matter if it rotates back to 0
+  startingPixel++;
+
+  // Slice the lamp in parts where the first and brightest one is our radar effect
+  // while the rest have a progressively dimmer color.
+  for (auto slice = 0; slice < SLICES; slice++) {
+    for (auto pixel = slice * pixels / SLICES + startingPixel; pixel < (slice + 1) * pixels / SLICES + startingPixel; pixel++) {
+      neopixels.setPixelColor(pixel % pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+    }
+
+    rgbColor.red   /= 2;
+    rgbColor.green /= 2;
+    rgbColor.blue  /= 2;
+  }
+}
+
+/**
+   Perform some cool radar effect
+   @param neopixels The neopixel structure to set color
+   @param rgbColor  The RGB color to set the pixels
+*/
+void setCoolRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
+  const auto pixels = neopixels.numPixels();
+
+  static unsigned int startingPixel = 0;
+  
+  // Does not matter if it rotates back to 0
+  startingPixel++;
+  
+  for (auto pixel = 0 + startingPixel; pixel < 3*pixels/5 + startingPixel; pixel++) {
+    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+  }
+
+  RGBColor rgb1;
+  rgb1.red   = rgbColor.green;
+  rgb1.green = rgbColor.blue;
+  rgb1.blue  = rgbColor.red;
+
+  for (auto pixel = 3*pixels/5 + startingPixel; pixel < 4*pixels/5 + startingPixel; pixel++) {
+    neopixels.setPixelColor(pixel%pixels, rgb1.red, rgb1.green, rgb1.blue);
+  }
+
+  RGBColor rgb2;
+  rgb2.red   = rgbColor.blue;
+  rgb2.green = rgbColor.red;
+  rgb2.blue  = rgbColor.green;
+  
+  for (auto pixel = 4*pixels/5 + startingPixel; pixel < pixels + startingPixel; pixel++) {
+    neopixels.setPixelColor(pixel%pixels, rgb2.red, rgb2.green, rgb2.blue);
+  }
+}
+
+/**
+  Perform some pulse effect
+   @param neopixels The neopixel structure to set color
+   @param rgbColor  The RGB color to set the pixels
+*/
+void setPulseEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   for (auto pixel = 0; pixel < neopixels.numPixels(); pixel++) {
     neopixels.setPixelColor(pixel, rgbColor.red, rgbColor.green, rgbColor.blue);
   }
@@ -301,7 +389,7 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
       neopixels.show();
       delay(dimInterval);
     }
-    delay(TIME_BETWEEN_DIMS);
+
     // Dim down every pixel for the current color
     for (auto intensity = hsvColor.value; intensity >= 0; intensity--) {
       // Get the RGB value of the currently dimmed HSV color
@@ -310,7 +398,6 @@ void dimWithColors(Adafruit_NeoPixel& neopixels, std::vector<HSVColor>& hsvColor
       neopixels.show();
       delay(dimInterval);
     }
-    delay(TIME_BETWEEN_DIMS);
   }
 }
 
