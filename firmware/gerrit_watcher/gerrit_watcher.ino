@@ -272,7 +272,7 @@ std::vector<HSVColor> getColorsForUnfinishedReviews() {
 */
 
 void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
-  switch(MY_EFFECT) {
+  switch (MY_EFFECT) {
     case Effect::RADAR:
       setRadarEffect(neopixels, rgbColor);
       break;
@@ -296,11 +296,9 @@ void setAllPixelColor(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
 void setRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   const auto pixels = neopixels.numPixels();
   static const auto SLICES = 3;
+  static uint8_t startingPixel = 0;
 
-  static unsigned int startingPixel = 0;
-
-  // Does not matter if it rotates back to 0
-  startingPixel++;
+  startingPixel++; // Does not matter if it rotates back to 0
 
   // Slice the lamp in parts where the first and brightest one is our radar effect
   // while the rest have a progressively dimmer color.
@@ -322,14 +320,12 @@ void setRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
 */
 void setCoolRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   const auto pixels = neopixels.numPixels();
+  static uint8_t startingPixel = 0;
 
-  static unsigned int startingPixel = 0;
-  
-  // Does not matter if it rotates back to 0
-  startingPixel++;
-  
-  for (auto pixel = 0 + startingPixel; pixel < 3*pixels/5 + startingPixel; pixel++) {
-    neopixels.setPixelColor(pixel%pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
+  startingPixel++; // Does not matter if it rotates back to 0
+
+  for (auto pixel = 0 + startingPixel; pixel < 3 * pixels / 5 + startingPixel; pixel++) {
+    neopixels.setPixelColor(pixel % pixels, rgbColor.red, rgbColor.green, rgbColor.blue);
   }
 
   RGBColor rgb1;
@@ -337,17 +333,17 @@ void setCoolRadarEffect(Adafruit_NeoPixel& neopixels, RGBColor& rgbColor) {
   rgb1.green = rgbColor.blue;
   rgb1.blue  = rgbColor.red;
 
-  for (auto pixel = 3*pixels/5 + startingPixel; pixel < 4*pixels/5 + startingPixel; pixel++) {
-    neopixels.setPixelColor(pixel%pixels, rgb1.red, rgb1.green, rgb1.blue);
+  for (auto pixel = 3 * pixels / 5 + startingPixel; pixel < 4 * pixels / 5 + startingPixel; pixel++) {
+    neopixels.setPixelColor(pixel % pixels, rgb1.red, rgb1.green, rgb1.blue);
   }
 
   RGBColor rgb2;
   rgb2.red   = rgbColor.blue;
   rgb2.green = rgbColor.red;
   rgb2.blue  = rgbColor.green;
-  
-  for (auto pixel = 4*pixels/5 + startingPixel; pixel < pixels + startingPixel; pixel++) {
-    neopixels.setPixelColor(pixel%pixels, rgb2.red, rgb2.green, rgb2.blue);
+
+  for (auto pixel = 4 * pixels / 5 + startingPixel; pixel < pixels + startingPixel; pixel++) {
+    neopixels.setPixelColor(pixel % pixels, rgb2.red, rgb2.green, rgb2.blue);
   }
 }
 
