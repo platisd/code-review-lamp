@@ -3,7 +3,7 @@ A colorful lamp to notify the developer team for pending code reviews.
 ![Code Review Lamp](https://i.imgur.com/V9rwpnD.jpg)
 
 ## What?
-Code Review Lamp is a Neopixel-based, WiFi-enabled gadget that reminds developers to peer-review their colleagues' code. For each submission that has not been reviewed enough, it dims up and down at a color that is specific to the developer who is trying to introduce a new functionality to a project. The lamp stops shining once the code has either received enough reviews by the team, been merged or designated as *Work In Progress*. Currently, it is configured to work with [Gerrit](https://www.gerritcodereview.com/) (v.2.15) but it could be programmed to fetch data from different tools such as Jenkins, GitHub, GitLab etc.
+Code Review Lamp is a Neopixel-based, WiFi-enabled gadget that reminds developers to peer-review their colleagues' code. For each submission that has not been reviewed enough, it dims up and down at a color that is specific to the developer who is trying to introduce a new functionality to a project. The lamp stops shining once the code has either received enough reviews by the team, been merged or designated as *Work In Progress*. Currently, it is configured to work with [Gerrit](https://www.gerritcodereview.com/) (v.2.15) or GitHub, but it could be programmed to fetch data from different tools such as Jenkins, GitLab etc.
 
 The gadget is comprised of an [ESP8266 microcontroller module](https://wiki.wemos.cc/products:d1:d1_mini) that connects wirelessly to the internet, as well as a [Neopixel ring](https://www.adafruit.com/product/1463) which displays various colors.
 
@@ -24,7 +24,9 @@ We have included a special user in our team's Gerrit group, representing the lam
 Next, for each review the user is assigned to, we determine how many reviews have been conducted and if they fall short of our agreed threshold, a color that corresponds to the *owner* of the review is displayed on the Neopixel ring.
 
 ### Software
-The [firmware](https://github.com/platisd/code-review-lamp/blob/master/firmware/gerrit_watcher/gerrit_watcher.ino), compatible with ESP8266 microcontrollers, utilizes the [Adafruit Neopixel](https://github.com/adafruit/Adafruit_NeoPixel) library to control the Neopixel ring. The JSON response from Gerrit is parsed manually, as existing solutions which would nicely serialize the whole stream would frequently cause heap overflow.
+The [Gerrit firmware](https://github.com/platisd/code-review-lamp/blob/master/firmware/gerrit_watcher/gerrit_watcher.ino), compatible with ESP8266 microcontrollers, utilizes the [Adafruit Neopixel](https://github.com/adafruit/Adafruit_NeoPixel) library to control the Neopixel ring. When using **Gerrit**, the JSON response is parsed manually, as existing solutions which would nicely serialize the whole stream would frequently cause heap overflow.
+
+The [GitHub firmware](https://github.com/platisd/code-review-lamp/blob/master/firmware/github_watcher/github_watcher.ino) on the other hand does not parse the JSON response coming from **GitHub** itself directly. This is due to the API response being overly verbose for the ESP8266 microcontroller, which renders parsing it on the microcontroller infeasible. Instead, an external server has to be used which will process the data and merely send what colors should be displayed. An example of such a server, written in Python3, can be found [here](https://github.com/platisd/code-review-lamp/blob/master/firmware/github_watcher/github_reviews_watcher.py).
 
 ### Hardware
 The gadget is rather simple to source and assemble. The only "custom" part is the [PCB](https://github.com/platisd/code-review-lamp/tree/master/hardware/gerrit_lamp) which merely connects the ESP8266 module with the Neopixel ring.
@@ -46,11 +48,14 @@ After you have assembled the hardware, flash the firmware by following the steps
 * Select the serial port your Code Review Lamp is connected to
   * In Arduino IDE, click on `Tools` :arrow_right: `Port`
 * Copy & paste the [code](https://github.com/platisd/code-review-lamp/blob/master/firmware/gerrit_watcher/gerrit_watcher.ino) to your IDE
-* Make the necessary adjustments for your own SSID, Gerrit user etc
+* Make the necessary adjustments for your own SSID, username etc
+  * GitHub Token
+    * Create a [personal access token](https://github.com/settings/tokens)
+    * Give it all `repo` permissions if you want it to access your private repositories too, otherwise just `public_repo`
 * Upload the firmware by clicking `Upload` (the right arrow button on the upper left corner of your IDE)
 
 ### How to use
-* Commit your change to Gerrit
+* Commit your change to Gerrit or GitHub
 * Add the group which includes the team as reviewers
   * A special "notification" user that will trigger the lamp should be part of the group
 * ???
