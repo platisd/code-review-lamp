@@ -29,13 +29,7 @@ const auto kWifiReconnectInterval   = 30000UL;
 const auto kCountry               = "sweden";
 const char kFingerprint[] PROGMEM = "07 62 08 46 01 4E 07 CB 68 AB 12 53 A8 5E 6F 7E D4 D3 4E 20";
 
-const HSVColor KINDA_ORANGE(10, 100, 100);
 const HSVColor MELLOW_YELLOW(40, 100, 100);
-const HSVColor ALIEN_GREEN(100, 100, 100);
-const HSVColor ALMOST_WHITE(293, 4, 70);
-const HSVColor GREEK_BLUE(227, 100, 100);
-const HSVColor GOTH_PURPLE(315, 100, 100);
-const HSVColor BLOOD_RED(0, 100, 100);
 
 Adafruit_NeoPixel ring(kNeopixelRingSize, kNeopixelPin, NEO_GRB + NEO_KHZ800);
 WiFiUDP ntpUDP;
