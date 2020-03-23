@@ -2,6 +2,8 @@
 Corona lamp is a twist over the [Code Review lamp](https://github.com/platisd/code-review-lamp)
 to raise awareness over the spread of the [CoViD-19](https://en.wikipedia.org/wiki/Coronavirus_disease_2019).
 
+![corona lamp](https://i.imgur.com/7pOjvkv.jpg)
+
 ## What?
 
 Corona lamp illuminates according to the growth rate of the CoViD-19 infections in the selected country,
@@ -35,3 +37,9 @@ Fetch the following resources via the Arduino IDE library manager:
 
 * [ArduinoJson](https://arduinojson.org/)
 * [NTPClient](https://github.com/arduino-libraries/NTPClient)
+
+### Personalize
+
+To personalize the Corona Lamp for your country, simply change the `kCountry`
+[value](https://github.com/platisd/code-review-lamp/blob/master/firmware/corona_lamp/corona_lamp.ino#L29)
+accordingly. A list with the available countries can be found [here](https://covid-api.quintessential.gr/data/meta/countries).
